@@ -62,10 +62,15 @@ join pizzas on order_details.pizza_id = pizzas.pizza_id
 join pizza_types on pizzas.pizza_type_id = pizza_types.pizza_type_id
 group by order_date order by Revenue ) as sales;
 
-
-
-
-
-
-
-
+-- determine the top 3 most ordered pizza types based on revenue for each pizza category
+Select name, Revenue from
+( Select category, name, Revenue,
+rank() over (partition by category order by Revenue Desc) as rn
+From
+( select pizza_types.name, pizza_types.category, round(sum(order_details.quantity * pizzas.price)) as Revenue
+from pizza_types
+join pizzas on pizza_types.pizza_type_id = pizzas.pizza_type_id
+join order_details on pizzas.pizza_id = order_details.pizza_id
+join orders on order_details.order_id = orders.order_id
+group by pizza_types.name, pizza_types.category ) as a ) as b
+where rn <=3;
